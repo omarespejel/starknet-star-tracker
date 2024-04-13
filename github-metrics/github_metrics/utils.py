@@ -10,6 +10,7 @@ def load_all_developers_dataset():
         print(colored("Loading dataset...", "blue"))
         # print(os.getcwd())
         print(os.listdir("."))
+        print(os.listdir("github_metrics"))
         df = pd.read_csv("github_metrics/data/source/all_networks_developer_classification.csv")
         df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
         return df
