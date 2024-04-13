@@ -2,11 +2,13 @@ from datetime import datetime
 
 import pandas as pd
 from termcolor import colored
+import os
 
 
 def load_all_developers_dataset():
     try:
         print(colored("Loading dataset...", "blue"))
+        print(os.getcwd())
         df = pd.read_csv("./data/source/all_networks_developer_classification.csv")
         df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
         return df
