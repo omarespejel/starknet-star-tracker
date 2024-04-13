@@ -10,7 +10,7 @@ def load_all_developers_dataset():
         print(colored("Loading dataset...", "blue"))
         print(os.getcwd())
         print(os.listdir("."))
-        os.chdir("github_metrics")
+        # os.chdir("github_metrics")
         # print(os.listdir("../.."))
         # print(os.listdir("./github_metrics"))
 
