@@ -7,7 +7,7 @@ from termcolor import colored
 def load_all_developers_dataset():
     try:
         print(colored("Loading dataset...", "blue"))
-        df = pd.read_csv("data/source/all_networks_developer_classification.csv")
+        df = pd.read_csv("./data/source/all_networks_developer_classification.csv")
         df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
         return df
     except Exception as e:
