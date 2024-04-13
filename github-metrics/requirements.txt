@@ -1,0 +1,9 @@
+pandas
+gradio
+matplotlib
+termcolor
+seaborn
+numpy
+lifelines
+plotly
+scipy

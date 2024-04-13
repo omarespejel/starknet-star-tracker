@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "github-metrics"
+version = "0.1.0"
+description = ""
+authors = ["Omar U. Espejel <espejelomar@gmail.com>"]
+readme = "README.md"
+packages = [{include = "github_metrics"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+gradio = "^4.19.2"
+pandas = "^2.2.1"
+matplotlib = "^3.8.3"
+termcolor = "^2.4.0"
+seaborn = "^0.13.2"
+numpy = "^1.26.4"
+lifelines = "^0.28.0"
+plotly = "^5.19.0"
+scipy = "^1.12.0"
+fpdf = "^1.7.2"
+streamlit = "^1.33.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
