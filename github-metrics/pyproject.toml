@@ -18,6 +18,7 @@ plotly = "^5.19.0"
 scipy = "^1.12.0"
 fpdf = "^1.7.2"
 streamlit = "^1.33.0"
+python-pptx = "^0.6.23"
 
 
 [build-system]
