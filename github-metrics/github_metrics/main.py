@@ -5,7 +5,8 @@ import plotly.graph_objects as go
 from scipy.stats import mannwhitneyu
 from termcolor import colored
 from utils import load_all_developers_dataset
-from fpdf import FPDF
+from pptx import Presentation
+from pptx.util import Inches
 
 
 def process_input(input_text, uploaded_file, program_end_date=None, event_name=None):
@@ -221,17 +222,17 @@ def perform_statistical_analysis(filtered_df, github_handles, program_end_date_s
     if p_value < 0.2:
         if stat > 0:
             analysis_result += (
-                "Difference in commit activity before and after the program is considered significant. "
-                "The commit activity is higher after the program."
+                "CONGRATULATIONS! The commit activity from the builders taking part in this program is statistically higher after the program."
+                "Difference in commit activity before and after the program is considered significant."
             )
         else:
             analysis_result += (
-                "Difference in commit activity before and after the program is considered significant. "
-                "The commit activity is lower after the program."
+                "UNFORTUNATELY: The commit activity from the builders taking part in this program is lower after the program."
+                "Difference in commit activity before and after the program is considered significant."
             )
     else:
         analysis_result += (
-            "No significant difference in commit activity before and after the program."
+            "NOTHING ESPECIAL. No significant difference in commit activity before and after the program."
         )
 
     return analysis_result
@@ -304,11 +305,11 @@ def compare_user_developers_to_others(
 
     if p_value < 0.25:
         if stat > 0:
-            comparison_result += "The user-specified developers have a significantly higher number of commits compared to other developers since the program end date."
+            comparison_result += "GREAT! The user-specified developers have a significantly higher number of commits compared to other developers since the program end date."
         else:
-            comparison_result += "The user-specified developers have a significantly lower number of commits compared to other developers since the program end date."
+            comparison_result += "BAD! The user-specified developers have a significantly lower number of commits compared to other developers since the program end date."
     else:
-        comparison_result += "There is no significant difference in the number of commits between user-specified developers and other developers since the program end date."
+        comparison_result += "NOTHING SPECIAL! There is no significant difference in the number of commits between user-specified developers and other developers since the program end date."
 
     return comparison_result
 
@@ -338,11 +339,11 @@ def compare_growth_rate(user_specified_active, other_developers_active, df):
 
     if p_value < 0.25:
         if stat > 0:
-            comparison_result += "The user-specified developers have a significantly higher average growth rate of commit activity compared to other developers."
+            comparison_result += "GOOD! These developers have a significantly higher average growth rate of commit activity compared to other developers."
         else:
-            comparison_result += "The user-specified developers have a significantly lower average growth rate of commit activity compared to other developers."
+            comparison_result += "BAD! These developers have a significantly lower average growth rate of commit activity compared to other developers."
     else:
-        comparison_result += "There is no significant difference in the average growth rate of commit activity between user-specified developers and other developers."
+        comparison_result += "NOTHING SPECIAL! There is no significant difference in the average growth rate of commit activity between user-specified developers and other developers."
 
     return comparison_result
 
@@ -375,90 +376,94 @@ def generate_tldr_summary(
     if highly_involved_devs:
         summary += f"**High Performers:** {', '.join(highly_involved_devs)}\n\n"
     if "higher after the program" in analysis_result:
-        summary += "**Commit Activity:** Significantly higher after the program.\n\n"
+        summary += "**Commit Activity from partipants in the program:** GREAT! Significantly higher after the program.\n\n"
     elif "lower after the program" in analysis_result:
-        summary += "**Commit Activity:** Significantly lower after the program.\n\n"
+        summary += "**Commit Activity from partipants in the program:** BAD! Significantly lower after the program.\n\n"
     else:
-        summary += "**Commit Activity:** No significant change after the program.\n\n"
+        summary += "**Commit Activity from partipants in the program:** NOTHING SPECIAL: No significant change after the program.\n\n"
     if new_developers_count.startswith("Number of new developers"):
         summary += (
             f"**New Developers:** {new_developers_count.split(':')[1].strip()}\n\n"
         )
     if "significantly higher number of commits" in comparison_result:
-        summary += "**Comparison with Other Developers:** User-specified developers have a significantly higher number of commits.\n\n"
+        summary += "**Comparison with Other Developers:** GREAT! User-specified developers have a significantly higher number of commits.\n\n"
     elif "significantly lower number of commits" in comparison_result:
-        summary += "**Comparison with Other Developers:** User-specified developers have a significantly lower number of commits.\n\n"
+        summary += "**Comparison with Other Developers:** BAD! User-specified developers have a significantly lower number of commits.\n\n"
     else:
-        summary += "**Comparison with Other Developers:** No significant difference in the number of commits.\n\n"
+        summary += "**Comparison with Other Developers:** NOTHING SPECIAL: No significant difference in the number of commits.\n\n"
     if "significantly higher average growth rate" in growth_rate_result:
-        summary += "**Growth Rate:** User-specified developers have a significantly higher average growth rate.\n\n"
+        summary += "**Growth Rate in number of commits:** GREAT! User-specified developers have a significantly higher average growth rate.\n\n"
     elif "significantly lower average growth rate" in growth_rate_result:
-        summary += "**Growth Rate:** User-specified developers have a significantly lower average growth rate.\n\n"
+        summary += "**Growth Rate in number of commits:** BAD! User-specified developers have a significantly lower average growth rate.\n\n"
     else:
-        summary += "**Growth Rate:** No significant difference in the average growth rate.\n\n"
+        summary += "**Growth Rate in number of commits:** NOTHING SPECIAL: No significant difference in the average growth rate.\n\n"
     if event_name:
         summary += f"*Note: The analysis is based on the {event_name} event.*\n\n"
     return summary
 
 
-def create_pdf_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
+def create_ppt_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result):
+    prs = Presentation()
 
-    # Add TLDR summary
-    pdf.cell(200, 10, txt="TLDR Summary", ln=1)
-    pdf.multi_cell(200, 10, txt=tldr_summary)
+    # Add TLDR summary slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "TLDR Summary"
+    content = slide.placeholders[1]
+    content.text = tldr_summary
 
-    # Add line plot
-    pdf.add_page()
-    pdf.cell(200, 10, txt="Commits per Month", ln=1)
+    # Add line plot slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "Commits per Month"
     line_fig.write_image("line_plot.png")
-    pdf.image("line_plot.png", x=10, y=30, w=190)
+    slide.shapes.add_picture("line_plot.png", Inches(1), Inches(2), width=Inches(8), height=Inches(5))
 
-    # Add box plot
-    pdf.add_page()
-    pdf.cell(200, 10, txt="Box Plot Comparison (Last 3 Months)", ln=1)
+    # Add box plot slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "Box Plot Comparison (Last 3 Months)"
     box_fig.write_image("box_plot.png")
-    pdf.image("box_plot.png", x=10, y=30, w=190)
+    slide.shapes.add_picture("box_plot.png", Inches(1), Inches(2), width=Inches(8), height=Inches(5))
 
-    # Add developer classification
-    pdf.add_page()
-    pdf.cell(200, 10, txt="Developer Classification", ln=1)
-    pdf.set_font("Arial", size=10)
-    for idx, row in classification_df.iterrows():
-        pdf.cell(200, 10, txt=f"{row['Developer']}: {row['Classification']}", ln=1)
+    # Add developer classification slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "Developer Classification"
+    content = slide.placeholders[1]
+    content.text = "\n".join([f"{row['Developer']}: {row['Classification']}" for _, row in classification_df.iterrows()])
 
-    # Add statistical analysis
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Statistical Analysis Results", ln=1)
-    pdf.set_font("Arial", size=10)
-    pdf.multi_cell(200, 10, txt=analysis_result)
+    # Add statistical analysis slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "Statistical Analysis Results"
+    content = slide.placeholders[1]
+    content.text = analysis_result
 
-    # Add new developers count
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Number of New Developers", ln=1)
-    pdf.set_font("Arial", size=10)
-    pdf.multi_cell(200, 10, txt=new_developers_count)
+    # Add new developers count slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "Number of New Developers"
+    content = slide.placeholders[1]
+    content.text = new_developers_count
 
-    # Add comparison with other developers
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Comparison with Other Developers", ln=1)
-    pdf.set_font("Arial", size=10)
-    pdf.multi_cell(200, 10, txt=comparison_result)
+    # Add comparison with other developers slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "Comparison with Other Developers"
+    content = slide.placeholders[1]
+    content.text = comparison_result
 
-    # Add growth rate comparison
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Growth Rate Comparison", ln=1)
-    pdf.set_font("Arial", size=10)
-    pdf.multi_cell(200, 10, txt=growth_rate_result)
+    # Add growth rate comparison slide
+    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    title = slide.shapes.title
+    title.text = "Growth Rate Comparison"
+    content = slide.placeholders[1]
+    content.text = growth_rate_result
 
-    pdf.output("developer_insights_report.pdf")
-    
+    prs.save("developer_insights_report.pptx")
+
+
 def main():
     df = load_all_developers_dataset()
     max_available_month = df["month_year"].max().strftime("%Y-%m")
@@ -587,8 +592,8 @@ def main():
             """
         )
 
-        create_pdf_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result)
-        st.success("Report exported as developer_insights_report.pdf")
+        create_ppt_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result)
+        st.success("Report exported as developer_insights_report.pptx")
 
     
 

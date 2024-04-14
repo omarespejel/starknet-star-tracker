@@ -5,6 +5,5 @@ numpy
 lifelines
 plotly
 scipy
-fpdf
 streamlit
-kaleido
+python-pptx
