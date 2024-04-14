@@ -429,35 +429,35 @@ def create_ppt_report(tldr_summary, line_fig, box_fig, classification_df, analys
     # Add developer classification slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
-    title.text = "Developer Classification"
+    title.text = "Which developers are the most active?"
     content = slide.placeholders[1]
     content.text = "\n".join([f"{row['Developer']}: {row['Classification']}" for _, row in classification_df.iterrows()])
 
     # Add statistical analysis slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
-    title.text = "Statistical Analysis Results"
+    title.text = "Are these developers committing more code after the program than before the program?"
     content = slide.placeholders[1]
     content.text = analysis_result
 
     # Add new developers count slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
-    title.text = "Number of New Developers"
+    title.text = "Do we have new developers after the program?"
     content = slide.placeholders[1]
     content.text = new_developers_count
 
     # Add comparison with other developers slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
-    title.text = "Comparison with Other Developers"
+    title.text = "Do the developers of this program commit more code than other Starknet developers?"
     content = slide.placeholders[1]
     content.text = comparison_result
 
     # Add growth rate comparison slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
-    title.text = "Growth Rate Comparison"
+    title.text = "Is the commit growth rate of these developers higher than that of other Starknet developers?"
     content = slide.placeholders[1]
     content.text = growth_rate_result
 
