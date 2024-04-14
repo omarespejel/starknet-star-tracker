@@ -1,5 +1,4 @@
 pandas
-matplotlib
 termcolor
 seaborn
 numpy
@@ -8,3 +7,4 @@ plotly
 scipy
 fpdf
 streamlit
+kaleido

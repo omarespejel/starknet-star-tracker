@@ -8,7 +8,6 @@ packages = [{include = "github_metrics"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-gradio = "^4.19.2"
 pandas = "^2.2.1"
 matplotlib = "^3.8.3"
 termcolor = "^2.4.0"

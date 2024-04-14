@@ -407,7 +407,6 @@ def generate_tldr_summary(
 
     return summary
 
-
 def create_pdf_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result):
     pdf = FPDF()
     pdf.add_page()
@@ -465,13 +464,17 @@ def create_pdf_report(tldr_summary, line_fig, box_fig, classification_df, analys
     pdf.multi_cell(200, 10, txt=growth_rate_result)
 
     pdf.output("developer_insights_report.pdf")
-
-
+    
 def main():
     df = load_all_developers_dataset()
     max_available_month = df["month_year"].max().strftime("%Y-%m")
 
     st.title("Starknet Star Tracker: GitHub Starknet Developer Insights")
+    st.markdown(
+    """
+    📝 **Note:** This tool is developed and maintained by Omar Espejel (Telegram: @espejelomar) from the Starknet Foundation. Feel free to contact him to provide feedback or ask questions.
+    """
+    )
     st.markdown(
         """
         This tool allows you to analyze the GitHub activity of developers within the Starknet ecosystem.
@@ -590,9 +593,8 @@ def main():
             """
         )
 
-        if st.button("Export Report as PDF"):
-            create_pdf_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result)
-            st.success("Report exported as developer_insights_report.pdf")
+        create_pdf_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result)
+        st.success("Report exported as developer_insights_report.pdf")
 
     
 
