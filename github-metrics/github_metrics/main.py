@@ -457,7 +457,7 @@ def create_ppt_report(tldr_summary, line_fig, box_fig, classification_df, analys
     # Add growth rate comparison slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
-    title.text = "Is the commit growth rate of these developers higher than that of other Starknet developers?"
+    title.text = "Is the increase rate in commits from these developers higher than that of other Starknet developers?"
     content = slide.placeholders[1]
     content.text = growth_rate_result
 
@@ -534,7 +534,7 @@ def main():
         st.plotly_chart(line_fig)
         st.plotly_chart(box_fig)
 
-        with st.expander("🏆 Developer Classification"):
+        with st.expander("🏆 Which developers are the most active?"):
             st.dataframe(classification_df)
             st.markdown(
                 """
@@ -547,10 +547,10 @@ def main():
                 """
             )
 
-        with st.expander("🆕 New Developers"):
+        with st.expander("🆕 Do we have new developers after the program?"):
             st.text(new_developers_count)
 
-        with st.expander("📊 Statistical Analysis"):
+        with st.expander("📊 Are these developers committing more code after the program than before the program?"):
             st.text(analysis_result)
             st.markdown(
                 """
@@ -562,7 +562,7 @@ def main():
                 """
             )
 
-        with st.expander("🔍 Comparison with Other Developers"):
+        with st.expander("🔍 Do the developers of this program commit more code than other Starknet developers?"):
             st.text(comparison_result)
             st.markdown(
                 """
@@ -574,7 +574,7 @@ def main():
                 """
             )
 
-        with st.expander("📈 Growth Rate Comparison"):
+        with st.expander("📈 Is the increase rate in commits from these developers higher than that of other Starknet developers?"):
             st.text(growth_rate_result)
             st.markdown(
                 """
