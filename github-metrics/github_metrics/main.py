@@ -368,44 +368,38 @@ def generate_tldr_summary(
     growth_rate_result,
     event_name,
 ):
-    summary = f"### 📝 TLDR Summary for {', '.join(github_handles)}\n\n"
-
+    summary = f"### TLDR Summary for {', '.join(github_handles)}\n\n"
     highly_involved_devs = classification_df[
         classification_df["Classification"] == "Highly involved"
     ]["Developer"].tolist()
     if highly_involved_devs:
-        summary += f"**🌟 High Performers:** {', '.join(highly_involved_devs)}\n\n"
-
+        summary += f"**High Performers:** {', '.join(highly_involved_devs)}\n\n"
     if "higher after the program" in analysis_result:
-        summary += "**📈 Commit Activity:** Significantly higher after the program.\n\n"
+        summary += "**Commit Activity:** Significantly higher after the program.\n\n"
     elif "lower after the program" in analysis_result:
-        summary += "**📉 Commit Activity:** Significantly lower after the program.\n\n"
+        summary += "**Commit Activity:** Significantly lower after the program.\n\n"
     else:
-        summary += "**🔄 Commit Activity:** No significant change after the program.\n\n"
-
+        summary += "**Commit Activity:** No significant change after the program.\n\n"
     if new_developers_count.startswith("Number of new developers"):
         summary += (
-            f"**🆕 New Developers:** {new_developers_count.split(':')[1].strip()}\n\n"
+            f"**New Developers:** {new_developers_count.split(':')[1].strip()}\n\n"
         )
-
     if "significantly higher number of commits" in comparison_result:
-        summary += "**🔍 Comparison with Other Developers:** User-specified developers have a significantly higher number of commits.\n\n"
+        summary += "**Comparison with Other Developers:** User-specified developers have a significantly higher number of commits.\n\n"
     elif "significantly lower number of commits" in comparison_result:
-        summary += "**🔍 Comparison with Other Developers:** User-specified developers have a significantly lower number of commits.\n\n"
+        summary += "**Comparison with Other Developers:** User-specified developers have a significantly lower number of commits.\n\n"
     else:
-        summary += "**🔍 Comparison with Other Developers:** No significant difference in the number of commits.\n\n"
-
+        summary += "**Comparison with Other Developers:** No significant difference in the number of commits.\n\n"
     if "significantly higher average growth rate" in growth_rate_result:
-        summary += "**📈 Growth Rate:** User-specified developers have a significantly higher average growth rate.\n\n"
+        summary += "**Growth Rate:** User-specified developers have a significantly higher average growth rate.\n\n"
     elif "significantly lower average growth rate" in growth_rate_result:
-        summary += "**📉 Growth Rate:** User-specified developers have a significantly lower average growth rate.\n\n"
+        summary += "**Growth Rate:** User-specified developers have a significantly lower average growth rate.\n\n"
     else:
-        summary += "**🔄 Growth Rate:** No significant difference in the average growth rate.\n\n"
-
+        summary += "**Growth Rate:** No significant difference in the average growth rate.\n\n"
     if event_name:
         summary += f"*Note: The analysis is based on the {event_name} event.*\n\n"
-
     return summary
+
 
 def create_pdf_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result):
     pdf = FPDF()
