@@ -7,6 +7,7 @@ from pptx.util import Inches
 from scipy.stats import mannwhitneyu
 from termcolor import colored
 from utils import load_all_developers_dataset
+from io import BytesIO
 
 
 def process_input(input_text, uploaded_file, program_end_date=None, event_name=None):
@@ -159,7 +160,7 @@ def create_box_plot(user_specified_active, other_developers_active):
         go.Box(y=other_developers_active["total_commits"], name="Other Developers")
     )
     box_fig.update_layout(
-        title="Comparison of Monthly Commits in the Last 3 Months: User Specified vs. Other Developers (Active Only)",
+        title="Monthly Commits: User Specified vs. Other Developers (Active Only)",
         yaxis_title="Total Monthly Commits",
         yaxis=dict(range=[0, 50]),
     )
@@ -412,9 +413,9 @@ def create_ppt_report(
     new_developers_count,
     comparison_result,
     growth_rate_result,
+    ppt_buffer,
 ):
     prs = Presentation()
-
     # Add TLDR summary slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
@@ -480,7 +481,7 @@ def create_ppt_report(
     content = slide.placeholders[1]
     content.text = growth_rate_result
 
-    prs.save("developer_insights_report.pptx")
+    prs.save(ppt_buffer)
 
 
 def main():
@@ -632,6 +633,7 @@ def main():
             """
         )
 
+        ppt_buffer = BytesIO()
         create_ppt_report(
             tldr_summary,
             line_fig,
@@ -641,8 +643,15 @@ def main():
             new_developers_count,
             comparison_result,
             growth_rate_result,
+            ppt_buffer,
         )
-        st.success("Report exported as developer_insights_report.pptx")
+        ppt_buffer.seek(0)
+        st.download_button(
+            label="Download Report",
+            data=ppt_buffer.getvalue(),
+            file_name="developer_insights_report.pptx",
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        )
 
 
 if __name__ == "__main__":
