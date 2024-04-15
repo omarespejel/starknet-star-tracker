@@ -488,7 +488,7 @@ def main():
     max_available_month = df["month_year"].max().strftime("%Y-%m")
 
     try:
-        with open("./assets/style.css") as f:
+        with open("./github-metrics/assets/style.css") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except:
         try:
