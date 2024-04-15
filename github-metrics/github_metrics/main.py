@@ -1,12 +1,12 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
+from pptx import Presentation
+from pptx.util import Inches
 from scipy.stats import mannwhitneyu
 from termcolor import colored
 from utils import load_all_developers_dataset
-from pptx import Presentation
-from pptx.util import Inches
 
 
 def process_input(input_text, uploaded_file, program_end_date=None, event_name=None):
@@ -26,7 +26,7 @@ def process_input(input_text, uploaded_file, program_end_date=None, event_name=N
             program_end_date = None
 
         df = load_all_developers_dataset()
-        
+
         print(colored("Filtering dataset...", "blue"))
         one_year_ago = pd.Timestamp.now() - pd.DateOffset(years=1)
         filtered_df = df[
@@ -35,7 +35,6 @@ def process_input(input_text, uploaded_file, program_end_date=None, event_name=N
         filtered_df = filtered_df.sort_values(by=["developer", "month_year"])
         filtered_df.loc[:, "month_year"] = pd.to_datetime(filtered_df["month_year"])
         line_fig = create_line_plot(filtered_df, github_handles, program_end_date)
-
 
         # Debug
         # print(colored("Debugging filtered dataset and github handles...", "blue"))
@@ -121,7 +120,11 @@ def create_line_plot(filtered_df, github_handles, program_end_date):
     missing_developers = set(github_handles) - set(plot_df["developer"].unique())
     for developer in missing_developers:
         new_row = pd.DataFrame(
-            {"developer": [developer], "month_year": [pd.Timestamp.now()], "total_commits": [0]}
+            {
+                "developer": [developer],
+                "month_year": [pd.Timestamp.now()],
+                "total_commits": [0],
+            }
         )
         plot_df = pd.concat([plot_df, new_row], ignore_index=True)
     plot_df = (
@@ -231,9 +234,7 @@ def perform_statistical_analysis(filtered_df, github_handles, program_end_date_s
                 "Difference in commit activity before and after the program is considered significant."
             )
     else:
-        analysis_result += (
-            "NOTHING ESPECIAL. No significant difference in commit activity before and after the program."
-        )
+        analysis_result += "NOTHING ESPECIAL. No significant difference in commit activity before and after the program."
 
     return analysis_result
 
@@ -402,7 +403,16 @@ def generate_tldr_summary(
     return summary
 
 
-def create_ppt_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result):
+def create_ppt_report(
+    tldr_summary,
+    line_fig,
+    box_fig,
+    classification_df,
+    analysis_result,
+    new_developers_count,
+    comparison_result,
+    growth_rate_result,
+):
     prs = Presentation()
 
     # Add TLDR summary slide
@@ -417,21 +427,30 @@ def create_ppt_report(tldr_summary, line_fig, box_fig, classification_df, analys
     title = slide.shapes.title
     title.text = "Commits per Month"
     line_fig.write_image("line_plot.png")
-    slide.shapes.add_picture("line_plot.png", Inches(1), Inches(2), width=Inches(8), height=Inches(5))
+    slide.shapes.add_picture(
+        "line_plot.png", Inches(1), Inches(2), width=Inches(8), height=Inches(5)
+    )
 
     # Add box plot slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
     title.text = "Box Plot Comparison (Last 3 Months)"
     box_fig.write_image("box_plot.png")
-    slide.shapes.add_picture("box_plot.png", Inches(1), Inches(2), width=Inches(8), height=Inches(5))
+    slide.shapes.add_picture(
+        "box_plot.png", Inches(1), Inches(2), width=Inches(8), height=Inches(5)
+    )
 
     # Add developer classification slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     title = slide.shapes.title
     title.text = "Which developers are the most active?"
     content = slide.placeholders[1]
-    content.text = "\n".join([f"{row['Developer']}: {row['Classification']}" for _, row in classification_df.iterrows()])
+    content.text = "\n".join(
+        [
+            f"{row['Developer']}: {row['Classification']}"
+            for _, row in classification_df.iterrows()
+        ]
+    )
 
     # Add statistical analysis slide
     slide = prs.slides.add_slide(prs.slide_layouts[1])
@@ -468,9 +487,20 @@ def main():
     df = load_all_developers_dataset()
     max_available_month = df["month_year"].max().strftime("%Y-%m")
 
+    try:
+        with open("./assets/style.css") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except:
+        try:
+            with open("../assets/style.css") as f:
+                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        except:
+            with open("assets/style.css") as f:
+                st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
     st.title("Starknet Star Tracker: GitHub Starknet Developer Insights")
     st.markdown(
-    """
+        """
     📝 **Note:** This tool is developed and maintained by Omar Espejel (Telegram: @espejelomar) from the Starknet Foundation. Feel free to contact him to provide feedback or ask questions.
     """
     )
@@ -485,7 +515,7 @@ def main():
         📺 **Video Tutorial:** Please watch this [5-minute video tutorial](https://www.loom.com/share/b60e7f1bd1ee473b97e9c84c74df692a) examining an African Bootcamp and the Basecamp bootcamp as examples to start using the app effectively.
         """
     )
-    
+
     text_input = st.text_input(
         "Enter GitHub handles separated by commas",
         placeholder="e.g., user1,user2,user3",
@@ -516,7 +546,9 @@ def main():
 
     if st.button("Analyze"):
         if program_end_date_input > max_available_month:
-            st.warning(f"The specified date {program_end_date_input} is not available in the dataset. Please choose a date up to {max_available_month}.")
+            st.warning(
+                f"The specified date {program_end_date_input} is not available in the dataset. Please choose a date up to {max_available_month}."
+            )
         else:
             (
                 line_fig,
@@ -527,7 +559,9 @@ def main():
                 comparison_result,
                 growth_rate_result,
                 tldr_summary,
-            ) = process_input(text_input, file_input, program_end_date_input, event_name_input)
+            ) = process_input(
+                text_input, file_input, program_end_date_input, event_name_input
+            )
 
         st.markdown(tldr_summary)
 
@@ -550,7 +584,9 @@ def main():
         with st.expander("🆕 Do we have new developers after the program?"):
             st.text(new_developers_count)
 
-        with st.expander("📊 Are these developers committing more code after the program than before the program?"):
+        with st.expander(
+            "📊 Are these developers committing more code after the program than before the program?"
+        ):
             st.text(analysis_result)
             st.markdown(
                 """
@@ -562,7 +598,9 @@ def main():
                 """
             )
 
-        with st.expander("🔍 Do the developers of this program commit more code than other Starknet developers?"):
+        with st.expander(
+            "🔍 Do the developers of this program commit more code than other Starknet developers?"
+        ):
             st.text(comparison_result)
             st.markdown(
                 """
@@ -574,7 +612,9 @@ def main():
                 """
             )
 
-        with st.expander("📈 Is the increase rate in commits from these developers higher than that of other Starknet developers?"):
+        with st.expander(
+            "📈 Is the increase rate in commits from these developers higher than that of other Starknet developers?"
+        ):
             st.text(growth_rate_result)
             st.markdown(
                 """
@@ -592,10 +632,17 @@ def main():
             """
         )
 
-        create_ppt_report(tldr_summary, line_fig, box_fig, classification_df, analysis_result, new_developers_count, comparison_result, growth_rate_result)
+        create_ppt_report(
+            tldr_summary,
+            line_fig,
+            box_fig,
+            classification_df,
+            analysis_result,
+            new_developers_count,
+            comparison_result,
+            growth_rate_result,
+        )
         st.success("Report exported as developer_insights_report.pptx")
-
-    
 
 
 if __name__ == "__main__":
