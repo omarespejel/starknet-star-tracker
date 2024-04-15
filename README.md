@@ -1,46 +1,66 @@
-# developer-metrics
+# Starknet Star Tracker: GitHub Starknet Developer Insights
 
-User adds a github handle or list (or csv) of github handles. It will receive per user the following metrics:
-- When they started coding in Starknet projets (first commit) and their progress over time. 
-- Gold star: Monthly Active Developers (However MAD is multi-causal and a lagging indicator so you need leading indicators which you have more direct control over.)
-- Classify the developer as a always been inactive, previously active but no longer, low-level active, and highly involved. 
-- If provided a list of github handles, it will also provide a list of the most active developers in the project. And the aggregate metrics for all the idnvidiuals.
+Access it live in: https://starknetstartracker.streamlit.app/
 
-## Process
+Starknet Star Tracker is a tool that allows you to analyze the GitHub activity of developers within the Starknet ecosystem. It provides insights into their monthly commit activity, involvement classification, and comparisons with other developers.
 
-* Create a gradio app where the user can input the github handles in a variable separated by commas. Also give the option to upload a csv file with the github handles in a single column, no need to name the column (mention this to the user). then this will be read by the main.py file.
-* in the backend there will a csv file (data/source/all_networks_developer_classification.csv) with the github handles and all their commits to projects in the Starknet ecosystem. the columns are: developer,month_year,network,total_commits,dev_classification (in other words we have the number of commits per developer per network per month).  main.py will read this file and match the github handles with the ones in the config.yaml file and create a subset of the csv file with only the commits of the github handles in the config.yaml file.
-* It will then plot in gradio (make it as aesthetic as possible) the commits per month for each developer in the subset of the csv file. The plot will have the x-axis as the month and the y-axis as the number of commits and each developer will be there. Make the plot start wuen we get the first ever commit by any of the users inputed by the user. it will also create a table in gradio with a classification of the developers as "always been inactive" (when the developer has never commited to the starknet repos), "previously active but no longer" (when the developer has been active before but has not been active in the last 3 months), "low-level active" (when the developer has been active in the last 3 months but with a total number of commits less than 20 summed), and "highly involved" (when the developer has more than 20 commits summed in the last three months). Order the developers in the table by the their classifition starting with the highly involved.
+## Features
+
+- Enter GitHub handles or upload a CSV file to specify the developers to analyze
+- Visualize monthly commit activity using line plots
+- Compare commit activity before and after a specified program end date
+- Classify developers based on their recent activity level
+- Identify new developers who started committing code after the program
+- Compare the commit activity and growth rate of specified developers with other Starknet developers
+- Generate a summary report in PowerPoint format
+
+## Usage
+
+1. Enter the GitHub handles of the developers you want to analyze, separated by commas, or upload a CSV file containing the handles in a single column.
+
+2. (Optional) Specify a program end date in the format YYYY-MM-DD to analyze the impact of events like Basecamp or Hackathons on developer activity. Leave it blank to analyze overall activity.
+
+3. (Optional) Enter an event name to associate with the analysis.
+
+4. Click the "Analyze" button to generate the insights.
+
+5. Explore the generated visualizations, classifications, and comparisons using the expandable sections.
+
+6. The app automatically generates a PowerPoint report named `developer_insights_report.pptx` containing the summary and key findings.
 
 
+## Run locally
 
-# Welcome to AnimeMetrics
+1. Clone the repository:
+   
+   ```
+   git clone https://github.com/omarespejel/starknet-star-tracker.git
+   ```
 
-Hello there! We built **AnimeMetrics** for a simple reason: to help you understand who's building the Starknet universe, how they're doing it, and the vibrant community behind the scenes.
+2. Install the required dependencies:
+3. 
+   ```
+   pip install -r requirements.txt
+   ```
 
-## What We Offer
+4. Run the Streamlit app:
+5. 
+   ```
+   streamlit run main.py
+   ```
 
-### Get to Know the Builders
-- **First Steps & Journeys**: See when a developer first dipped their toes into Starknet projects and follow their path since then.
-- **Who’s Who**: We categorize contributors to help you understand their engagement level at a glance:
-  - **The Quiet Ones**: Some prefer to watch from afar.
-  - **The Cameo**: Once active, now less so.
-  - **The Contributors**: They pop in and out, making their mark.
-  - **The Pillars**: The heart and soul of projects, always there.
+6. Access the app in your web browser at `http://localhost:8501`
 
-### Insights That Matter
-- **Spotlight Metric**: Our focus on Monthly Active Developers (MAD) gives you a glimpse of the project's heartbeat. But we go beyond, offering insights that help you see the full picture, today and tomorrow.
 
-### Bigger Picture
-- Give us one, ten, or a hundred GitHub handles, and we'll show you:
-  - The movers and shakers.
-  - Overall vibes of the community, combining all the bits and pieces.
+## Contributing
 
-## Dive In
+Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request.
 
-Starting is as simple as entering a GitHub handle (or a bunch of them). We'll take it from there, weaving through data to bring you insights wrapped in simplicity.
+## Contact
 
-## Why We Do It
+For any questions or feedback, please contact Omar Espejel from the Starknet Foundation:
+- Telegram: @espejelomar
 
-In a tech world that can often feel complex and distant, we aim to bring it down to earth. **AnimeMetrics** is here to decode the buzz of activity into stories of people, passion, and the progress they make together. Let's celebrate the community shaping Starknet, one commit at a time.
+## License
 
+This project is licensed under the [MIT License](LICENSE).
