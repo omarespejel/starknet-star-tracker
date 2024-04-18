@@ -10,8 +10,8 @@ def load_all_developers_dataset():
         print(colored("Loading dataset...", "blue"))
 
         # DEBUG
-        print(os.getcwd())
-        print(os.listdir("."))
+        # print(os.getcwd())
+        # print(os.listdir("."))
         # DEBUG
 
         try:

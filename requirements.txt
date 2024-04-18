@@ -8,3 +8,4 @@ scipy
 streamlit
 python-pptx
 matplotlib
+pypistats
