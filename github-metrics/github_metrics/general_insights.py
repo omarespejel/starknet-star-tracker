@@ -150,7 +150,7 @@ def homepage(df):
     fig_total_developers.update_layout(legend_title_text='Classification')
     st.plotly_chart(fig_total_developers)
     st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 12px;'><b>Description:</b> Number of developers classified by their activity, similar to the total commits plot.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px;'><b>Description:</b> Number of developers active per month by three different groups of developers: those with low-level activity (<10 commits), moderately active (10-19 commits), and highly involved (20+ commits).</p>", unsafe_allow_html=True)
 
     st.markdown("---")
 
