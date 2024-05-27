@@ -154,25 +154,25 @@ def homepage(df):
 
     st.markdown("---")
 
-    developers_growth_df = developers_growth_rate(df)
-    fig_developers_growth = px.bar(
-        developers_growth_df,
-        x="month_year",
-        y="growth_rate",
-        color="classification",
-        title="Developers Growth Rate (Year-over-Year)",
-        color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
-    )
-    fig_developers_growth.update_yaxes(rangemode="tozero", title="Growth Rate")
-    fig_developers_growth.update_layout(
-        xaxis=dict(categoryorder='array', categoryarray=sorted(developers_growth_df['month_year'].unique(), key=lambda x: pd.to_datetime(x, format='%B %Y')))
-    )
-    fig_developers_growth.update_layout(legend_title_text='Classification')
-    st.plotly_chart(fig_developers_growth)
-    st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 12px;'><b>Description:</b> The year-over-year growth rate of developers for each activity group (low-level activity, moderately active, and highly involved) based on the total developers per month.</p>", unsafe_allow_html=True)
+    # developers_growth_df = developers_growth_rate(df)
+    # fig_developers_growth = px.bar(
+    #     developers_growth_df,
+    #     x="month_year",
+    #     y="growth_rate",
+    #     color="classification",
+    #     title="Developers Growth Rate (Year-over-Year)",
+    #     color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
+    # )
+    # fig_developers_growth.update_yaxes(rangemode="tozero", title="Growth Rate")
+    # fig_developers_growth.update_layout(
+    #     xaxis=dict(categoryorder='array', categoryarray=sorted(developers_growth_df['month_year'].unique(), key=lambda x: pd.to_datetime(x, format='%B %Y')))
+    # )
+    # fig_developers_growth.update_layout(legend_title_text='Classification')
+    # st.plotly_chart(fig_developers_growth)
+    # st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
+    # st.markdown("<p style='font-size: 12px;'><b>Description:</b> The year-over-year growth rate of developers for each activity group (low-level activity, moderately active, and highly involved) based on the total developers per month.</p>", unsafe_allow_html=True)
 
-    st.markdown("---")
+    # st.markdown("---")
 
     total_commits_df = total_commits_per_month(df)
     fig_total_commits = px.bar(
@@ -194,25 +194,25 @@ def homepage(df):
 
     st.markdown("---")
 
-    commits_growth_df = commits_growth_rate(df)
-    fig_commits_growth = px.bar(
-        commits_growth_df,
-        x="month_year",
-        y="growth_rate",
-        color="classification",
-        title="Commits Growth Rate (Year-over-Year)",
-        color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
-    )
-    fig_commits_growth.update_yaxes(rangemode="tozero", title="Growth Rate")
-    fig_commits_growth.update_layout(
-        xaxis=dict(categoryorder='array', categoryarray=sorted(commits_growth_df['month_year'].unique(), key=lambda x: pd.to_datetime(x, format='%B %Y')))
-    )
-    fig_commits_growth.update_layout(legend_title_text='Classification')
-    st.plotly_chart(fig_commits_growth)
-    st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 12px;'><b>Description:</b> The year-over-year growth rate of commits for each developer group (low-level activity, moderately active, and highly involved) based on the total commits per month.</p>", unsafe_allow_html=True)
+    # commits_growth_df = commits_growth_rate(df)
+    # fig_commits_growth = px.bar(
+    #     commits_growth_df,
+    #     x="month_year",
+    #     y="growth_rate",
+    #     color="classification",
+    #     title="Commits Growth Rate (Year-over-Year)",
+    #     color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
+    # )
+    # fig_commits_growth.update_yaxes(rangemode="tozero", title="Growth Rate")
+    # fig_commits_growth.update_layout(
+    #     xaxis=dict(categoryorder='array', categoryarray=sorted(commits_growth_df['month_year'].unique(), key=lambda x: pd.to_datetime(x, format='%B %Y')))
+    # )
+    # fig_commits_growth.update_layout(legend_title_text='Classification')
+    # st.plotly_chart(fig_commits_growth)
+    # st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
+    # st.markdown("<p style='font-size: 12px;'><b>Description:</b> The year-over-year growth rate of commits for each developer group (low-level activity, moderately active, and highly involved) based on the total commits per month.</p>", unsafe_allow_html=True)
 
-    st.markdown("---")
+    # st.markdown("---")
 
     st.subheader("Last Month's Active Developers by Category")
     classification_df = classify_developers_per_month(df)
