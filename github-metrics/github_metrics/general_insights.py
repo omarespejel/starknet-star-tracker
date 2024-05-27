@@ -6,8 +6,9 @@ import streamlit as st
 
 def total_commits_per_month(df):
     df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
+    current_month = pd.Timestamp.now().strftime("%Y-%m")
     total_commits_df = (
-        df[df["month_year"] >= "2023-01-01"]
+        df[(df["month_year"] >= "2023-01-01") & (df["month_year"].dt.strftime("%Y-%m") != current_month)]
         .groupby([pd.Grouper(key="month_year", freq="M"), "developer"])
         .agg({"total_commits": "sum"})
         .reset_index()
@@ -32,6 +33,8 @@ def total_commits_per_month(df):
 
 def commits_growth_rate(df):
     total_commits_df = total_commits_per_month(df)
+    current_month = pd.Timestamp.now().strftime("%B %Y")
+    total_commits_df = total_commits_df[total_commits_df["month_year"] != current_month]
     total_commits_df["month_year"] = pd.to_datetime(total_commits_df["month_year"], format="%B %Y")
     total_commits_df["year"] = total_commits_df["month_year"].dt.year
     total_commits_df["growth_rate"] = total_commits_df.groupby("year")[
@@ -43,8 +46,9 @@ def commits_growth_rate(df):
 
 def total_developers_per_month(df):
     df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
+    current_month = pd.Timestamp.now().strftime("%Y-%m")
     total_developers_df = (
-        df[df["month_year"] >= "2023-01-01"]
+        df[(df["month_year"] >= "2023-01-01") & (df["month_year"].dt.strftime("%Y-%m") != current_month)]
         .groupby([pd.Grouper(key="month_year", freq="M"), "developer"])
         .agg({"total_commits": "sum"})
         .reset_index()
@@ -72,6 +76,8 @@ def total_developers_per_month(df):
 
 def developers_growth_rate(df):
     total_developers_df = total_developers_per_month(df)
+    current_month = pd.Timestamp.now().strftime("%B %Y")
+    total_developers_df = total_developers_df[total_developers_df["month_year"] != current_month]
     total_developers_df["month_year"] = pd.to_datetime(total_developers_df["month_year"], format="%B %Y")
     total_developers_df["year"] = total_developers_df["month_year"].dt.year
     total_developers_df["growth_rate"] = total_developers_df.groupby(
