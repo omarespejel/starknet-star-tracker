@@ -21,6 +21,7 @@ streamlit = "^1.33.0"
 python-pptx = "^0.6.23"
 starknet-py = "^0.21.0"
 pypistats = "^1.5.0"
+orjson = "^3.10.1"
 
 [build-system]
 requires = ["poetry-core"]

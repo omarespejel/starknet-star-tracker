@@ -321,7 +321,7 @@ def homepage(df):
         x="month",
         y="downloads",
         color="source",
-        title="Monthly Downloads of Starknet Packages (Last 4 Months)",
+        title="Monthly Downloads of Starknet Packages (Cargo only shows 3 months)",
         color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
     )
     fig_starknet_downloads.update_layout(
