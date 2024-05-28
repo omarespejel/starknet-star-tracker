@@ -111,7 +111,7 @@ def classify_developers_per_month(df):
         "Moderately active (10-19 commits)": 1,
         "Low-level active (<10 commits)": 2
     })
-    classification_df = classification_df.sort_values(by=["sort_key", "total_commits"], ascending=[True, False])
+    classification_df = classification_df.sort_values(by=["sort_key", "total_commits"], ascending=[False, False])
     classification_df = classification_df[["developer", "classification", "total_commits"]]
     return classification_df
 
