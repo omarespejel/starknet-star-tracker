@@ -3,6 +3,8 @@ import pypistats
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import plotly.graph_objects as go
+
 
 def total_commits_per_month(df):
     df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
@@ -115,6 +117,66 @@ def classify_developers_per_month(df):
     classification_df = classification_df[["developer", "classification", "total_commits"]]
     return classification_df
 
+
+def developer_flow_plot(df):
+    df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
+    last_month = df["month_year"].max()
+    prev_month = last_month - pd.DateOffset(months=1)
+
+    def get_classification(commits):
+        if commits == 0:
+            return "Not active"
+        elif commits < 10:
+            return "Low-level active (<10 commits)"
+        elif commits < 20:
+            return "Moderately active (10-19 commits)"
+        else:
+            return "Highly involved (20+ commits)"
+
+    last_month_df = df[df["month_year"] == last_month]
+    prev_month_df = df[df["month_year"] == prev_month]
+
+    last_month_classification = last_month_df.groupby("developer")["total_commits"].sum().apply(get_classification)
+    prev_month_classification = prev_month_df.groupby("developer")["total_commits"].sum().apply(get_classification)
+
+    flow_data = pd.concat([prev_month_classification, last_month_classification], axis=1)
+    flow_data.columns = ["Previous Month", "Current Month"]
+    flow_data = flow_data.reset_index()
+
+    labels = list(set(flow_data["Previous Month"].unique()) | set(flow_data["Current Month"].unique()))
+    labels_prev = [f"{label} (Previous Month)" for label in labels]
+    labels_curr = [f"{label} (Current Month)" for label in labels]
+    labels = labels_prev + labels_curr
+
+    source = [labels_prev.index(f"{prev} (Previous Month)") for prev in flow_data["Previous Month"]]
+    target = [labels_curr.index(f"{curr} (Current Month)") for curr in flow_data["Current Month"]]
+    value = flow_data.groupby(["Previous Month", "Current Month"]).size().values
+
+    node_colors = ["#fe4a49", "#28286e", "#74b0ff", "#808080"]
+    node_colors_dict = {}
+    for i, label in enumerate(labels):
+        node_colors_dict[label] = node_colors[i % len(node_colors)]
+
+    fig_flow = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color="black", width=0.5),
+            label=labels,
+            color=[node_colors_dict[label] for label in labels]
+        ),
+        link=dict(
+            source=source,
+            target=target,
+            value=value
+        )
+    )])
+
+    fig_flow.update_layout(title_text="Developer Flow: Category Changes (Last Two Months)", font_size=10)
+    st.plotly_chart(fig_flow)
+    st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px;'><b>Description:</b> The flow of developers between different activity categories (low-level activity, moderately active, highly involved, and not active) from the previous month to the current month.</p>", unsafe_allow_html=True)
+    
 def homepage(df):
     try:
         with open("./github-metrics/assets/style.css") as f:
@@ -219,6 +281,10 @@ def homepage(df):
     st.dataframe(classification_df)
     st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px;'><b>Description:</b> The specific GitHub handles of the users and their activity. This is useful to identify the most active developers during the last month.</p>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    developer_flow_plot(df)
 
     st.markdown("---")
 
