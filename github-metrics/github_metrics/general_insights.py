@@ -177,6 +177,32 @@ def developer_flow_plot(df):
     st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px;'><b>Description:</b> The flow of developers between different activity categories (low-level activity, moderately active, highly involved, and not active) from the previous month to the current month.</p>", unsafe_allow_html=True)
     
+def developer_commits_difference(df):
+    df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
+    current_month = pd.Timestamp.now().strftime("%B_%Y")
+    
+    current_month_dt = pd.to_datetime(current_month, format="%B_%Y")
+    prev_month_dt = current_month_dt - pd.DateOffset(months=1)
+    prev_prev_month_dt = current_month_dt - pd.DateOffset(months=2)
+    
+    prev_month_df = df[df["month_year"] == prev_month_dt]
+    prev_prev_month_df = df[df["month_year"] == prev_prev_month_dt]
+    
+    prev_month_commits = prev_month_df.groupby("developer")["total_commits"].sum()
+    prev_prev_month_commits = prev_prev_month_df.groupby("developer")["total_commits"].sum()
+    
+    commits_difference_df = pd.concat([prev_month_commits, prev_prev_month_commits], axis=1)
+    commits_difference_df.columns = [prev_month_dt.strftime("%B_%Y"), prev_prev_month_dt.strftime("%B_%Y")]
+    commits_difference_df["commits_difference"] = commits_difference_df[prev_month_dt.strftime("%B_%Y")] - commits_difference_df[prev_prev_month_dt.strftime("%B_%Y")]
+    
+    commits_difference_df = commits_difference_df.reset_index()
+    commits_difference_df = commits_difference_df[["developer", "commits_difference"]]
+    commits_difference_df = commits_difference_df[commits_difference_df["commits_difference"].notnull()]
+    commits_difference_df = commits_difference_df.sort_values("commits_difference")
+    commits_difference_df = commits_difference_df.rename(columns={"commits_difference": "How many more commits they had this month compared to the last one?"})
+    
+    return commits_difference_df, prev_month_dt.strftime("%B_%Y"), prev_prev_month_dt.strftime("%B_%Y")
+
 def homepage(df):
     try:
         with open("./github-metrics/assets/style.css") as f:
@@ -282,6 +308,19 @@ def homepage(df):
     st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px;'><b>Description:</b> The specific GitHub handles of the users and their activity. This is useful to identify the most active developers during the last month.</p>", unsafe_allow_html=True)
 
+    st.markdown("---")
+
+    commits_difference_df, prev_month, prev_prev_month = developer_commits_difference(df)
+
+    if not commits_difference_df.empty:
+        st.subheader(f"Developer Commits Difference: {prev_month} vs {prev_prev_month}")
+        st.dataframe(commits_difference_df)
+        st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 12px;'><b>Description:</b> The difference in the number of commits for each developer compared to the previous month. Negative values indicate fewer commits than the previous month.</p>", unsafe_allow_html=True)
+    else:
+        st.subheader(f"Developer Commits Difference: {prev_month} vs {prev_prev_month}")
+        st.write("No data available for the selected months.")
+    
     st.markdown("---")
 
     developer_flow_plot(df)
