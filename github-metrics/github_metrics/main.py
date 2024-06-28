@@ -27,8 +27,8 @@ def main():
         homepage(df)
     elif app_mode == "Program Evaluation":
         program_evaluation()
-    elif app_mode == "Developer Engagement":
-        developer_engagement_journey(df)
+    # elif app_mode == "Developer Engagement":
+    #     developer_engagement_journey(df)
 
 if __name__ == "__main__":
     main()
