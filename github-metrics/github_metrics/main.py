@@ -2,7 +2,7 @@ import streamlit as st
 from program_evaluation import program_evaluation
 from general_insights import homepage
 from utils import load_all_developers_dataset
-from developer_engagement import developer_engagement_journey
+# from developer_engagement import developer_engagement_journey
 import plotly
 
 plotly.io.json.config.default_engine = 'orjson'
