@@ -172,10 +172,10 @@ def developer_flow_plot(df):
         )
     )])
 
-    fig_flow.update_layout(title_text="Developer Flow: Category Changes (Last Two Months)", font_size=10)
-    st.plotly_chart(fig_flow)
-    st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 12px;'><b>Description:</b> The flow of developers between different activity categories (low-level activity, moderately active, highly involved, and not active) from the previous month to the current month.</p>", unsafe_allow_html=True)
+    # fig_flow.update_layout(title_text="Developer Flow: Category Changes (Last Two Months)", font_size=10)
+    # st.plotly_chart(fig_flow)
+    # st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
+    # st.markdown("<p style='font-size: 12px;'><b>Description:</b> The flow of developers between different activity categories (low-level activity, moderately active, highly involved, and not active) from the previous month to the current month.</p>", unsafe_allow_html=True)
     
 def developer_commits_difference(df):
     df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
@@ -202,6 +202,132 @@ def developer_commits_difference(df):
     commits_difference_df = commits_difference_df.rename(columns={"commits_difference": "How many more commits they had this month compared to the last one?"})
     
     return commits_difference_df, prev_month_dt.strftime("%B_%Y"), prev_prev_month_dt.strftime("%B_%Y")
+
+def calculate_developer_tenure(df):
+    df['month_year'] = pd.to_datetime(df['month_year'], format='%B_%Y')
+    df = df.sort_values('month_year')
+    first_commit = df.groupby('developer')['month_year'].min().reset_index()
+    first_commit.columns = ['developer', 'first_commit']
+    df = pd.merge(df, first_commit, on='developer', how='left')
+    df['tenure'] = (df['month_year'] - df['first_commit']).dt.days / 365.25
+    return df
+
+def monthly_active_devs_by_tenure(df):
+    df = calculate_developer_tenure(df)
+    df['tenure_category'] = pd.cut(df['tenure'], 
+                                   bins=[-float('inf'), 1, 2, float('inf')],
+                                   labels=['0-1y', '1y-2y', '2y+'])
+    
+    # Get the first day of the previous month
+    last_complete_month = pd.Timestamp.now().replace(day=1) - pd.DateOffset(days=1)
+    last_complete_month = last_complete_month.replace(day=1)
+    
+    # Exclude the current month and any future months
+    df = df[df['month_year'] < last_complete_month]
+    
+    monthly_active = df[df['total_commits'] > 0].groupby(['month_year', 'tenure_category']).size().unstack(fill_value=0)
+    monthly_active = monthly_active.reset_index()
+    monthly_active['month_year'] = pd.to_datetime(monthly_active['month_year'])
+    monthly_active = monthly_active.sort_values('month_year')
+    
+    return monthly_active
+
+def plot_monthly_active_devs_by_tenure(monthly_active):
+    monthly_active['month_year'] = pd.to_datetime(monthly_active['month_year'])
+    
+    # Get the first day of the previous month
+    last_complete_month = pd.Timestamp.now().replace(day=1) - pd.DateOffset(days=1)
+    last_complete_month = last_complete_month.replace(day=1)
+    
+    # Ensure we're not including any data from the current month
+    monthly_active = monthly_active[monthly_active['month_year'] < last_complete_month]
+    
+    monthly_active = monthly_active[monthly_active['month_year'] >= '2022-01-01']
+    last_month = monthly_active['month_year'].max()
+
+    fig = go.Figure()
+    
+    colors = {'0-1y': '#74b0ff', '1y-2y': '#28286e', '2y+': '#fe4a49'}
+    
+    for category in ['2y+', '1y-2y', '0-1y']:
+        fig.add_trace(go.Scatter(
+            x=monthly_active['month_year'],
+            y=monthly_active[category],
+            mode='lines',
+            name=category,
+            line=dict(width=2, color=colors[category]),
+        ))
+    
+    fig.update_layout(
+        title='Monthly Active Devs by Tenure',
+        xaxis_title='Date',
+        yaxis_title='Number of Devs',
+        yaxis_range=[0, 500],
+        legend_title_text='Tenure',
+        hovermode='x unified',
+        xaxis=dict(
+            range=[pd.Timestamp('2022-01-01'), last_month],
+            dtick='M3'
+        ),
+        plot_bgcolor='black',
+        paper_bgcolor='black',
+        font=dict(color='white'),
+        legend=dict(bgcolor='rgba(0,0,0,0)'),
+    )
+    
+    fig.update_yaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor='rgba(255, 255, 255, 0.1)'
+    )
+    
+    return fig
+
+def calculate_developer_retention(df):
+    df['month_year'] = pd.to_datetime(df['month_year'], format='%B_%Y')
+    df = df.sort_values('month_year')
+    
+    first_activity = df.groupby('developer')['month_year'].min()
+    last_activity = df.groupby('developer')['month_year'].max()
+    
+    retention_data = []
+    for months in [3, 6, 9, 12]:  # Added 9 months
+        still_active = ((last_activity - first_activity) >= pd.Timedelta(days=30*months)).sum()
+        total_devs = len(first_activity)
+        retention_rate = still_active / total_devs
+        retention_data.append({'months': months, 'retention_rate': retention_rate})
+    
+    return pd.DataFrame(retention_data)
+
+def plot_developer_retention(retention_df):
+    fig = go.Figure(data=[
+        go.Bar(x=retention_df['months'], y=retention_df['retention_rate'], 
+               text=retention_df['retention_rate'].apply(lambda x: f'{x:.2%}'),
+               textposition='auto',
+               marker_color='#74b0ff')  # Using the blue color from other plots
+    ])
+    
+    fig.update_layout(
+        title='Developer Retention Rate',
+        xaxis_title='Months After First Contribution',
+        yaxis_title='Retention Rate',
+        yaxis_tickformat=',.0%',
+        plot_bgcolor='black',
+        paper_bgcolor='black',
+        font=dict(color='white'),
+        xaxis=dict(tickmode='array', tickvals=[3, 6, 9, 12]),
+        yaxis_range=[0, 1]
+    )
+    
+    # Add horizontal grid lines
+    fig.update_yaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor='rgba(255, 255, 255, 0.1)'
+    )
+    
+    return fig
+
 
 def homepage(df):
     try:
@@ -242,25 +368,6 @@ def homepage(df):
 
     st.markdown("---")
 
-    # developers_growth_df = developers_growth_rate(df)
-    # fig_developers_growth = px.bar(
-    #     developers_growth_df,
-    #     x="month_year",
-    #     y="growth_rate",
-    #     color="classification",
-    #     title="Developers Growth Rate (Year-over-Year)",
-    #     color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
-    # )
-    # fig_developers_growth.update_yaxes(rangemode="tozero", title="Growth Rate")
-    # fig_developers_growth.update_layout(
-    #     xaxis=dict(categoryorder='array', categoryarray=sorted(developers_growth_df['month_year'].unique(), key=lambda x: pd.to_datetime(x, format='%B %Y')))
-    # )
-    # fig_developers_growth.update_layout(legend_title_text='Classification')
-    # st.plotly_chart(fig_developers_growth)
-    # st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
-    # st.markdown("<p style='font-size: 12px;'><b>Description:</b> The year-over-year growth rate of developers for each activity group (low-level activity, moderately active, and highly involved) based on the total developers per month.</p>", unsafe_allow_html=True)
-
-    # st.markdown("---")
 
     total_commits_df = total_commits_per_month(df)
     fig_total_commits = px.bar(
@@ -282,25 +389,17 @@ def homepage(df):
 
     st.markdown("---")
 
-    # commits_growth_df = commits_growth_rate(df)
-    # fig_commits_growth = px.bar(
-    #     commits_growth_df,
-    #     x="month_year",
-    #     y="growth_rate",
-    #     color="classification",
-    #     title="Commits Growth Rate (Year-over-Year)",
-    #     color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
-    # )
-    # fig_commits_growth.update_yaxes(rangemode="tozero", title="Growth Rate")
-    # fig_commits_growth.update_layout(
-    #     xaxis=dict(categoryorder='array', categoryarray=sorted(commits_growth_df['month_year'].unique(), key=lambda x: pd.to_datetime(x, format='%B %Y')))
-    # )
-    # fig_commits_growth.update_layout(legend_title_text='Classification')
-    # st.plotly_chart(fig_commits_growth)
-    # st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
-    # st.markdown("<p style='font-size: 12px;'><b>Description:</b> The year-over-year growth rate of commits for each developer group (low-level activity, moderately active, and highly involved) based on the total commits per month.</p>", unsafe_allow_html=True)
-
-    # st.markdown("---")
+    monthly_active = monthly_active_devs_by_tenure(df)
+    fig_monthly_active = plot_monthly_active_devs_by_tenure(monthly_active)
+    st.plotly_chart(fig_monthly_active, use_container_width=True)
+    st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px;'><b>Description:</b> Number of active developers per month categorized by their tenure in the project, from 2022 to the most recent data available. Each line represents a different tenure category.</p>", unsafe_allow_html=True)
+ 
+    retention_df = calculate_developer_retention(df)
+    fig_retention = plot_developer_retention(retention_df)
+    st.plotly_chart(fig_retention, use_container_width=True)
+    st.markdown("<p style='font-size: 12px;'><b>Source:</b> Open Source repositories in GitHub</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px;'><b>Description:</b> Percentage of developers who remain active 3, 6, and 12 months after their first contribution.</p>", unsafe_allow_html=True)
 
     st.subheader("Last Month's Active Developers by Category")
     classification_df = classify_developers_per_month(df)

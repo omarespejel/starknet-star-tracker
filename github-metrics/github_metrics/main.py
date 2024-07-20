@@ -16,10 +16,10 @@ def main():
         """
         - **Homepage**: Explore developer insights and package downloads for the Starknet ecosystem.
         - **Program Evaluation**: Analyze the impact of specific programs or events on developer activity.
-        - **Developer Engagement**: Visualize developer engagement journey and survival curve analysis.
         """
     )
-    app_mode = st.sidebar.selectbox("Select Application", ["Homepage", "Program Evaluation", "Developer Engagement"])
+    # TODO - **Developer Engagement**: Visualize developer engagement journey and survival curve analysis.
+    app_mode = st.sidebar.selectbox("Select Application", ["Homepage", "Program Evaluation"])
     st.sidebar.markdown("---")
     st.sidebar.markdown("With love from [@espejelomar](https://twitter.com/espejelomar) at [Starknet](https://starknet.io)")
 
