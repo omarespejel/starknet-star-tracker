@@ -235,13 +235,10 @@ def monthly_active_devs_by_tenure(df):
 def plot_monthly_active_devs_by_tenure(monthly_active):
     monthly_active['month_year'] = pd.to_datetime(monthly_active['month_year'])
     
-    # Get the first day of the previous month
     last_complete_month = pd.Timestamp.now().replace(day=1) - pd.DateOffset(days=1)
     last_complete_month = last_complete_month.replace(day=1)
     
-    # Ensure we're not including any data from the current month
     monthly_active = monthly_active[monthly_active['month_year'] < last_complete_month]
-    
     monthly_active = monthly_active[monthly_active['month_year'] >= '2022-01-01']
     last_month = monthly_active['month_year'].max()
 
@@ -269,16 +266,16 @@ def plot_monthly_active_devs_by_tenure(monthly_active):
             range=[pd.Timestamp('2022-01-01'), last_month],
             dtick='M3'
         ),
-        plot_bgcolor='black',
-        paper_bgcolor='black',
-        font=dict(color='white'),
-        legend=dict(bgcolor='rgba(0,0,0,0)'),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='black'),
+        legend=dict(bgcolor='rgba(255,255,255,0.5)'),
     )
     
     fig.update_yaxes(
         showgrid=True, 
         gridwidth=1, 
-        gridcolor='rgba(255, 255, 255, 0.1)'
+        gridcolor='rgba(0, 0, 0, 0.1)'
     )
     
     return fig
@@ -304,7 +301,7 @@ def plot_developer_retention(retention_df):
         go.Bar(x=retention_df['months'], y=retention_df['retention_rate'], 
                text=retention_df['retention_rate'].apply(lambda x: f'{x:.2%}'),
                textposition='auto',
-               marker_color='#74b0ff')  # Using the blue color from other plots
+               marker_color='#74b0ff')
     ])
     
     fig.update_layout(
@@ -312,18 +309,17 @@ def plot_developer_retention(retention_df):
         xaxis_title='Months After First Contribution',
         yaxis_title='Retention Rate',
         yaxis_tickformat=',.0%',
-        plot_bgcolor='black',
-        paper_bgcolor='black',
-        font=dict(color='white'),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='black'),
         xaxis=dict(tickmode='array', tickvals=[3, 6, 9, 12]),
         yaxis_range=[0, 1]
     )
     
-    # Add horizontal grid lines
     fig.update_yaxes(
         showgrid=True, 
         gridwidth=1, 
-        gridcolor='rgba(255, 255, 255, 0.1)'
+        gridcolor='rgba(0, 0, 0, 0.1)'
     )
     
     return fig
