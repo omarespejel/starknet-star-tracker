@@ -439,7 +439,13 @@ def plot_starknet_package_growth_rate(avg_growth_rate):
     
     return fig
 
-def add_starknet_growth_rate_visualization(csv_path):
+def add_starknet_growth_rate_visualization():
+    try:
+        csv_path = get_starknet_downloads_csv_path()
+    except FileNotFoundError as e:
+        st.error(f"Error: {str(e)}")
+        return
+
     downloads_combined = pd.read_csv(csv_path)
     
     avg_growth_rate = calculate_starknet_package_growth_rate(downloads_combined)
@@ -450,6 +456,19 @@ def add_starknet_growth_rate_visualization(csv_path):
     st.markdown("<p style='font-size: 12px;'><b>Source:</b> NPM, PyPI, and Cargo</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px;'><b>Description:</b> Average monthly growth rate of Starknet package downloads for each language. The growth rate is calculated based on the available data for each language, which may vary.</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px;'><b>Note:</b> Growth rates are calculated based on month-to-month changes in download numbers. The number of months used for calculation may differ for each language due to data availability.</p>", unsafe_allow_html=True)
+
+
+def get_starknet_downloads_csv_path():
+    possible_paths = [
+        "data/source/starknet_downloads.csv",
+        "github-metrics/data/source/starknet_downloads.csv"
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+    
+    raise FileNotFoundError(f"CSV file not found in any of the expected locations: {', '.join(possible_paths)}")
 
 
 def homepage(df):
@@ -550,7 +569,12 @@ def homepage(df):
     # st.markdown("---")
 
     # New code for Starknet package downloads
-    csv_path = "data/source/starknet_downloads.csv"
+    try:
+        csv_path = get_starknet_downloads_csv_path()
+    except FileNotFoundError as e:
+        st.error(f"Error: {str(e)}")
+        return
+    
     downloads_combined = pd.read_csv(csv_path)
 
     # Convert 'month' to datetime for proper sorting
@@ -592,7 +616,7 @@ def homepage(df):
 
     st.markdown("---")
 
-    add_starknet_growth_rate_visualization(csv_path)
+    add_starknet_growth_rate_visualization()
 
     csv_path = "data/source/starknet_downloads.csv"
     downloads_combined = update_downloads_data(csv_path)
