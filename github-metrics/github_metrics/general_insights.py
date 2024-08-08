@@ -12,7 +12,7 @@ def total_commits_per_month(df):
     current_month = pd.Timestamp.now().strftime("%Y-%m")
     total_commits_df = (
         df[(df["month_year"] >= "2023-01-01") & (df["month_year"].dt.strftime("%Y-%m") != current_month)]
-        .groupby([pd.Grouper(key="month_year", freq="M"), "developer"])
+        .groupby([pd.Grouper(key="month_year", freq="ME"), "developer"])
         .agg({"total_commits": "sum"})
         .reset_index()
     )
@@ -26,7 +26,7 @@ def total_commits_per_month(df):
         ],
     )
     total_commits_df = (
-        total_commits_df.groupby(["month_year", "classification"],  observed=False)["total_commits"]
+        total_commits_df.groupby(["month_year", "classification"], observed=True)["total_commits"]
         .sum()
         .reset_index()
     )
@@ -52,7 +52,7 @@ def total_developers_per_month(df):
     current_month = pd.Timestamp.now().strftime("%Y-%m")
     total_developers_df = (
         df[(df["month_year"] >= "2023-01-01") & (df["month_year"].dt.strftime("%Y-%m") != current_month)]
-        .groupby([pd.Grouper(key="month_year", freq="M"), "developer"])
+        .groupby([pd.Grouper(key="month_year", freq="ME"), "developer"])
         .agg({"total_commits": "sum"})
         .reset_index()
     )
@@ -67,7 +67,7 @@ def total_developers_per_month(df):
         ],
     )
     total_developers_df = (
-        total_developers_df.groupby(["month_year", "classification"], observed=False)
+        total_developers_df.groupby(["month_year", "classification"], observed=True)
         .size()
         .reset_index(name="total_developers")
     )
@@ -84,13 +84,12 @@ def developers_growth_rate(df):
     total_developers_df["month_year"] = pd.to_datetime(total_developers_df["month_year"], format="%B %Y")
     total_developers_df["year"] = total_developers_df["month_year"].dt.year
     total_developers_df["growth_rate"] = total_developers_df.groupby(
-        ["year", "classification"],  observed=False
+        ["year", "classification"], observed=True
     )["total_developers"].pct_change()
     total_developers_df["month_year"] = total_developers_df["month_year"].dt.strftime(
         "%B %Y"
     )
     return total_developers_df
-
 
 def classify_developers_per_month(df):
     df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
@@ -219,17 +218,18 @@ def monthly_active_devs_by_tenure(df):
                                    bins=[-float('inf'), 1, 2, float('inf')],
                                    labels=['0-1y', '1y-2y', '2y+'])
     
-    # Get the first day of the previous month
     last_complete_month = pd.Timestamp.now().replace(day=1) - pd.DateOffset(days=1)
     last_complete_month = last_complete_month.replace(day=1)
     
-    # Exclude the current month and any future months
     df = df[df['month_year'] < last_complete_month]
     
-    monthly_active = df[df['total_commits'] > 0].groupby(['month_year', 'tenure_category']).size().unstack(fill_value=0)
+    monthly_active = df[df['total_commits'] > 0].groupby(['month_year', 'tenure_category'], observed=True).size().unstack(fill_value=0)
     monthly_active = monthly_active.reset_index()
     monthly_active['month_year'] = pd.to_datetime(monthly_active['month_year'])
     monthly_active = monthly_active.sort_values('month_year')
+    
+    return monthly_active
+
     
     return monthly_active
 
@@ -370,7 +370,7 @@ def get_npm_downloads(package, start_date, end_date):
         data = response.json()
         df = pd.DataFrame(data['downloads'])
         df['day'] = pd.to_datetime(df['day'])
-        df = df.groupby(pd.Grouper(key='day', freq='M'))['downloads'].sum().reset_index()
+        df = df.groupby(pd.Grouper(key='day', freq='ME'))['downloads'].sum().reset_index()
         df['day'] = df['day'].dt.strftime("%Y-%m")
         df['source'] = 'JavaScript (NPM)'
         return df.rename(columns={'day': 'month'})
@@ -383,30 +383,24 @@ def get_cargo_downloads(package):
         data = response.json()
         df = pd.DataFrame(data['version_downloads'])
         df['date'] = pd.to_datetime(df['date'])
-        df = df.groupby(pd.Grouper(key='date', freq='M'))['downloads'].sum().reset_index()
+        df = df.groupby(pd.Grouper(key='date', freq='ME'))['downloads'].sum().reset_index()
         df['date'] = df['date'].dt.strftime("%Y-%m")
         df['source'] = 'Rust (Cargo)'
         return df.rename(columns={'date': 'month'})
     return pd.DataFrame()
 
 def calculate_starknet_package_growth_rate(downloads_combined):
-    # Convert 'month' to datetime
     downloads_combined['month'] = pd.to_datetime(downloads_combined['month'])
-    
-    # Sort the dataframe
     downloads_combined = downloads_combined.sort_values(['source', 'month'])
+    downloads_combined['growth_rate'] = downloads_combined.groupby('source', observed=True)['downloads'].pct_change()
     
-    # Calculate growth rate
-    downloads_combined['growth_rate'] = downloads_combined.groupby('source')['downloads'].pct_change()
-    
-    # Calculate average growth rate for each source
-    avg_growth_rate = downloads_combined.groupby('source').agg({
+    avg_growth_rate = downloads_combined.groupby('source', observed=True).agg({
         'growth_rate': 'mean',
         'month': ['min', 'max', 'count']
     }).reset_index()
     
     avg_growth_rate.columns = ['source', 'avg_growth_rate', 'start_date', 'end_date', 'months_count']
-    avg_growth_rate['avg_growth_rate'] = avg_growth_rate['avg_growth_rate'] * 100  # Convert to percentage
+    avg_growth_rate['avg_growth_rate'] = avg_growth_rate['avg_growth_rate'] * 100
     
     return avg_growth_rate
 
