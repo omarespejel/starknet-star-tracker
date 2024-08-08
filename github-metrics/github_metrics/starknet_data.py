@@ -1,5 +1,5 @@
-from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net import AccountClient, KeyPair
+from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import MAINNET
 

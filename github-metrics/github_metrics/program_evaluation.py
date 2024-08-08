@@ -1,13 +1,14 @@
+from io import BytesIO
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 from pptx import Presentation
 from pptx.util import Inches
 from scipy.stats import mannwhitneyu
 from termcolor import colored
 from utils import load_all_developers_dataset
-import streamlit as st
-from io import BytesIO
 
 
 def process_input(input_text, uploaded_file, program_end_date=None, event_name=None):

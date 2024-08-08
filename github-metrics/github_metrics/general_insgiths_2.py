@@ -348,26 +348,6 @@ def plot_monthly_active_devs_by_tenure(monthly_active):
     return fig
 
 
-def is_developer_retained(dev_commits, period_months):
-    """
-    Determine if a developer is retained based on their commit history.
-
-    :param dev_commits: Series of commit counts, indexed by month
-    :param period_months: Retention period in months (3, 6, or 12)
-    :return: Boolean indicating if the developer is retained
-    """
-    total_commits = dev_commits.sum()
-    active_months = (dev_commits > 0).sum()
-    avg_commits = total_commits / period_months
-
-    if period_months == 3:
-        return active_months >= 2 and total_commits >= 3 and avg_commits >= 1
-    elif period_months == 6:
-        return active_months >= 4 and total_commits >= 6 and avg_commits >= 1
-    elif period_months == 12:
-        return active_months >= 8 and total_commits >= 15 and avg_commits >= 1.25
-
-
 def calculate_developer_retention(df):
     df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
     df = df.sort_values("month_year")
@@ -382,36 +362,50 @@ def calculate_developer_retention(df):
         for period in [3, 6, 12]:  # 3 months, 6 months, and 1 year
             future_month = month + pd.DateOffset(months=period)
             if future_month <= latest_date:
-                dev_activity = df[
-                    (df["month_year"] > month)
-                    & (df["month_year"] <= future_month)
-                    & (df["developer"].isin(active_devs))
-                ]
+                if period == 3:
+                    retained_devs = set(
+                        df[
+                            (df["month_year"] > month)
+                            & (df["month_year"] <= future_month)
+                            & (df["developer"].isin(active_devs))
+                        ]
+                        .groupby("developer")["total_commits"]
+                        .sum()[lambda x: x >= 6]
+                        .index
+                    )
+                elif period == 6:
+                    retained_devs = set(
+                        df[
+                            (df["month_year"] > month)
+                            & (df["month_year"] <= future_month)
+                            & (df["developer"].isin(active_devs))
+                        ]
+                        .groupby("developer")["total_commits"]
+                        .sum()[lambda x: x >= 12]
+                        .index
+                    )
+                else:  # 12 months
+                    retained_devs = set(
+                        df[
+                            (df["month_year"] > month)
+                            & (df["month_year"] <= future_month)
+                            & (df["developer"].isin(active_devs))
+                        ]
+                        .groupby("developer")["total_commits"]
+                        .sum()[lambda x: x >= 30]
+                        .index
+                    )
 
-                dev_commits = (
-                    dev_activity.groupby(
-                        ["developer", pd.Grouper(key="month_year", freq="ME")]
-                    )["total_commits"]
-                    .sum()
-                    .unstack(fill_value=0)
-                )
-
-                retained_devs = dev_commits.apply(
-                    lambda x: is_developer_retained(x, period), axis=1
-                )
                 retention_rate = (
-                    retained_devs.sum() / len(active_devs)
-                    if len(active_devs) > 0
-                    else 0
+                    len(retained_devs) / len(active_devs) if len(active_devs) > 0 else 0
                 )
-
                 retention_data.append(
                     {
                         "month": month,
                         "period": period,
                         "retention_rate": retention_rate,
                         "active_devs": len(active_devs),
-                        "retained_devs": retained_devs.sum(),
+                        "retained_devs": len(retained_devs),
                     }
                 )
 
@@ -750,8 +744,6 @@ def homepage(df):
         unsafe_allow_html=True,
     )
 
-    st.markdown("---")
-
     retention_df = calculate_developer_retention(df)
     fig_retention = plot_developer_retention(retention_df)
     st.plotly_chart(fig_retention, use_container_width=True)
@@ -765,7 +757,7 @@ def homepage(df):
     
     <p style='font-size: 12px;'>For example, a data point for January 2023 shows the percentage of developers active in January 2023 who met the retention criteria for the subsequent period (3 months, 6 months, or 1 year). Recent months may not have data points due to incomplete retention periods.</p>
     
-    <p style='font-size: 12px;'>To quote a specific data point: "X% of developers active in [Month Year] were retained over the following [3-month/6-month/1-year] period, meeting the activity and contribution criteria."</p>
+    <p style='font-size: 12px;'>To quote a specific data point: "X% of developers active in [Month Year] were retained over the following [3-month/6-month/1-year] period, making at least [3/6/15] commits."</p>
     """,
         unsafe_allow_html=True,
     )
@@ -773,16 +765,14 @@ def homepage(df):
         """
     <p style='font-size: 12px;'><b>Definition:</b> An active developer is one who made at least one commit in a given month. Retention criteria:
     <ul>
-        <li>3-month retention: Active in at least 2 out of 3 months, with at least 3 total commits and an average of 1 commit per month.</li>
-        <li>6-month retention: Active in at least 4 out of 6 months, with at least 6 total commits and an average of 1 commit per month.</li>
-        <li>1-year retention: Active in at least 8 out of 12 months, with at least 15 total commits and an average of 1.25 commits per month.</li>
+        <li>3-month retention: At least 3 commits within the 3-month period following the initial month.</li>
+        <li>6-month retention: At least 6 commits within the 6-month period following the initial month.</li>
+        <li>1-year retention: At least 15 commits within the 1-year period following the initial month.</li>
     </ul>
     </p>
     """,
         unsafe_allow_html=True,
     )
-
-    st.markdown("---")
 
     st.subheader("Last Month's Active Developers by Category")
     classification_df = classify_developers_per_month(df)
