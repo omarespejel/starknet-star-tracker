@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 import plotly.graph_objects as go
+import os
 
 
 def total_commits_per_month(df):
@@ -325,6 +326,132 @@ def plot_developer_retention(retention_df):
     return fig
 
 
+def update_downloads_data(csv_path):
+    try:
+        end_date = pd.Timestamp.now().strftime("%Y-%m-%d")
+        start_date = (pd.Timestamp.now() - pd.DateOffset(months=5)).strftime("%Y-%m-%d")
+
+        downloads_py = get_pypi_downloads("starknet-py", start_date, end_date)
+        downloads_npm = get_npm_downloads("starknet", start_date, end_date)
+        downloads_cargo = get_cargo_downloads("starknet")
+
+        new_data = pd.concat([downloads_py, downloads_npm, downloads_cargo])
+
+        if os.path.exists(csv_path):
+            existing_data = pd.read_csv(csv_path)
+            combined_data = pd.concat([existing_data, new_data]).drop_duplicates(subset=['month', 'source'], keep='last')
+        else:
+            combined_data = new_data
+
+        combined_data.to_csv(csv_path, index=False)
+        return combined_data
+    except Exception as e:
+        st.error(f"Error updating downloads data: {str(e)}")
+        return pd.DataFrame()
+
+
+def get_pypi_downloads(package, start_date, end_date):
+    downloads_list = []
+    for i in range(5, 0, -1):
+        start_month = pd.Timestamp(end_date) - pd.DateOffset(months=i)
+        end_month = pd.Timestamp(end_date) - pd.DateOffset(months=i - 1)
+        start_month_str = start_month.strftime("%Y-%m-%d")
+        end_month_str = end_month.strftime("%Y-%m-%d")
+        downloads = pypistats.overall(package, start_date=start_month_str, end_date=end_month_str, format="pandas")
+        downloads = downloads[downloads["category"] == "without_mirrors"]
+        total_downloads = downloads["downloads"].sum()
+        downloads_list.append({"month": start_month.strftime("%Y-%m"), "downloads": total_downloads, "source": "Python (PyPI)"})
+    return pd.DataFrame(downloads_list)
+
+def get_npm_downloads(package, start_date, end_date):
+    url = f"https://api.npmjs.org/downloads/range/{start_date}:{end_date}/{package}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        df = pd.DataFrame(data['downloads'])
+        df['day'] = pd.to_datetime(df['day'])
+        df = df.groupby(pd.Grouper(key='day', freq='M'))['downloads'].sum().reset_index()
+        df['day'] = df['day'].dt.strftime("%Y-%m")
+        df['source'] = 'JavaScript (NPM)'
+        return df.rename(columns={'day': 'month'})
+    return pd.DataFrame()
+
+def get_cargo_downloads(package):
+    url = f"https://crates.io/api/v1/crates/{package}/downloads"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        df = pd.DataFrame(data['version_downloads'])
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.groupby(pd.Grouper(key='date', freq='M'))['downloads'].sum().reset_index()
+        df['date'] = df['date'].dt.strftime("%Y-%m")
+        df['source'] = 'Rust (Cargo)'
+        return df.rename(columns={'date': 'month'})
+    return pd.DataFrame()
+
+def calculate_starknet_package_growth_rate(downloads_combined):
+    # Convert 'month' to datetime
+    downloads_combined['month'] = pd.to_datetime(downloads_combined['month'])
+    
+    # Sort the dataframe
+    downloads_combined = downloads_combined.sort_values(['source', 'month'])
+    
+    # Calculate growth rate
+    downloads_combined['growth_rate'] = downloads_combined.groupby('source')['downloads'].pct_change()
+    
+    # Calculate average growth rate for each source
+    avg_growth_rate = downloads_combined.groupby('source').agg({
+        'growth_rate': 'mean',
+        'month': ['min', 'max', 'count']
+    }).reset_index()
+    
+    avg_growth_rate.columns = ['source', 'avg_growth_rate', 'start_date', 'end_date', 'months_count']
+    avg_growth_rate['avg_growth_rate'] = avg_growth_rate['avg_growth_rate'] * 100  # Convert to percentage
+    
+    return avg_growth_rate
+
+def plot_starknet_package_growth_rate(avg_growth_rate):
+    # Calculate the overall date range and average month count
+    overall_start = avg_growth_rate['start_date'].min().strftime('%B %Y')
+    overall_end = avg_growth_rate['end_date'].max().strftime('%B %Y')
+    avg_months = avg_growth_rate['months_count'].mean()
+
+    title = f'Average Monthly Growth Rate of Starknet Package Downloads<br><sup>Period: {overall_start} to {overall_end} (Avg. {avg_months:.1f} months per language)</sup>'
+
+    fig = px.bar(
+        avg_growth_rate,
+        x='source',
+        y='avg_growth_rate',
+        title=title,
+        labels={'source': 'Language', 'avg_growth_rate': 'Average Growth Rate (%)'},
+        color='source',
+        color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
+        text='avg_growth_rate'
+    )
+    
+    fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+    
+    fig.update_layout(
+        xaxis_title="Language",
+        yaxis_title="Average Growth Rate (%)",
+        yaxis_tickformat='.1f'
+    )
+    
+    return fig
+
+def add_starknet_growth_rate_visualization(csv_path):
+    downloads_combined = pd.read_csv(csv_path)
+    
+    avg_growth_rate = calculate_starknet_package_growth_rate(downloads_combined)
+    fig_growth_rate = plot_starknet_package_growth_rate(avg_growth_rate)
+    
+    st.plotly_chart(fig_growth_rate)
+    
+    st.markdown("<p style='font-size: 12px;'><b>Source:</b> NPM, PyPI, and Cargo</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px;'><b>Description:</b> Average monthly growth rate of Starknet package downloads for each language. The growth rate is calculated based on the available data for each language, which may vary.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px;'><b>Note:</b> Growth rates are calculated based on month-to-month changes in download numbers. The number of months used for calculation may differ for each language due to data availability.</p>", unsafe_allow_html=True)
+
+
 def homepage(df):
     try:
         with open("./github-metrics/assets/style.css") as f:
@@ -418,108 +545,26 @@ def homepage(df):
     
     st.markdown("---")
 
-    developer_flow_plot(df)
+    # developer_flow_plot(df)
 
-    st.markdown("---")
+    # st.markdown("---")
 
-    # Get monthly download stats for starknet-py package
-    package = "starknet-py"
-    end_date = pd.Timestamp.now().strftime("%Y-%m-%d")
-    start_date = (pd.Timestamp.now() - pd.DateOffset(months=5)).strftime("%Y-%m-%d")
-    downloads_list = []
+    # New code for Starknet package downloads
+    csv_path = "data/source/starknet_downloads.csv"
+    downloads_combined = pd.read_csv(csv_path)
 
-    for i in range(5, 0, -1):
-        start_month = pd.Timestamp(end_date) - pd.DateOffset(months=i)
-        end_month = pd.Timestamp(end_date) - pd.DateOffset(months=i - 1)
-        start_month_str = start_month.strftime("%Y-%m-%d")
-        end_month_str = end_month.strftime("%Y-%m-%d")
-        downloads = pypistats.overall(
-            package,
-            start_date=start_month_str,
-            end_date=end_month_str,
-            format="pandas",
-        )
-        downloads = downloads[downloads["category"] == "without_mirrors"]
-        total_downloads = downloads["downloads"].sum()
-    
-        downloads_list.append(
-            {"month": start_month.strftime("%B %Y"), "downloads": total_downloads}
-        )
-    downloads_py = pd.DataFrame(downloads_list)
+    # Convert 'month' to datetime for proper sorting
+    downloads_combined['month'] = pd.to_datetime(downloads_combined['month'])
 
-    # Starknet Package Downloads from npm
-    package = "starknet"
-    downloads_npm = pd.read_json(
-        f"https://api.npmjs.org/downloads/range/{start_date}:{end_date}/{package}"
-    )
-    if "downloads" in downloads_npm.columns:
-        downloads_npm["day"] = downloads_npm["downloads"].apply(lambda x: x["day"])
-        downloads_npm["downloads"] = downloads_npm["downloads"].apply(
-            lambda x: x["downloads"]
-        )
-        downloads_npm["day"] = pd.to_datetime(downloads_npm["day"])
-        downloads_npm = (
-            downloads_npm.groupby(pd.Grouper(key="day", freq="M"))["downloads"]
-            .sum()
-            .reset_index()
-        )
-        downloads_npm["day"] = downloads_npm["day"].dt.strftime("%B %Y")
-    else:
-        st.write("No download data available for starknet npm package.")
+    # Filter out the current month
+    current_month = pd.Timestamp.now().replace(day=1)
+    downloads_combined = downloads_combined[downloads_combined['month'] < current_month]
 
-    # Starknet Package Downloads from Cargo
-    package = "starknet"
-    url = f"https://crates.io/api/v1/crates/{package}/downloads"
-    response = requests.get(url)
-    if response.status_code == 200:
-        downloads_cargo = response.json()
-        downloads_cargo_df = pd.DataFrame(downloads_cargo["version_downloads"])
-        downloads_cargo_df["date"] = pd.to_datetime(downloads_cargo_df["date"])
-        downloads_cargo_df = (
-            downloads_cargo_df.groupby(pd.Grouper(key="date", freq="M"))[
-                "downloads"
-            ]
-            .sum()
-            .reset_index()
-        )
-        downloads_cargo_df["date"] = downloads_cargo_df["date"].dt.strftime("%B %Y")
-    else:
-        st.write("No download data available for starknet Cargo package.")
+    # Sort the data by date
+    downloads_combined = downloads_combined.sort_values('month')
 
-    # Combine download data from all sources
-    downloads_combined = pd.DataFrame(columns=["month"])
-
-    if not downloads_py.empty:
-        downloads_combined = downloads_combined.merge(
-            downloads_py.rename(columns={"date": "month", "downloads": "Python (PyPI)"}),
-            on="month",
-            how="outer",
-        )
-
-    if not downloads_npm.empty:
-        downloads_combined = downloads_combined.merge(
-            downloads_npm.rename(columns={"day": "month", "downloads": "JavaScript (NPM)"}),
-            on="month",
-            how="outer",
-        )
-
-    if not downloads_cargo_df.empty:
-        downloads_combined = downloads_combined.merge(
-            downloads_cargo_df.rename(
-                columns={"date": "month", "downloads": "Rust (Cargo)"}
-            ),
-            on="month",
-            how="outer",
-        )
-
-    downloads_combined = downloads_combined.fillna(0)
-    downloads_combined = downloads_combined.melt(
-        id_vars=["month"], var_name="source", value_name="downloads"
-    )
-    
-    # Exclude the current month from the downloads data
-    current_month = pd.Timestamp.now().strftime("%B %Y")
-    downloads_combined = downloads_combined[downloads_combined["month"] != current_month]
+    # Convert 'month' back to string format for display
+    downloads_combined['month'] = downloads_combined['month'].dt.strftime('%B %Y')
 
     # Create a stacked bar chart for combined downloads
     fig_starknet_downloads = px.bar(
@@ -527,15 +572,31 @@ def homepage(df):
         x="month",
         y="downloads",
         color="source",
-        title="Monthly Downloads of Starknet Packages (Cargo only shows 3 months)",
+        title="Monthly Downloads of Starknet Packages",
         color_discrete_sequence=["#fe4a49", "#28286e", "#74b0ff"],
     )
+
     fig_starknet_downloads.update_layout(
         xaxis=dict(categoryorder='array', categoryarray=sorted(downloads_combined['month'].unique(), key=lambda x: pd.to_datetime(x, format='%B %Y')))
     )
     fig_starknet_downloads.update_layout(legend_title_text='Package')
     fig_starknet_downloads.update_yaxes(title="Downloads")
+
+    # Display the plot
     st.plotly_chart(fig_starknet_downloads)
+
+    # Add source and description
     st.markdown("<p style='font-size: 12px;'><b>Source:</b> NPM, PyPI, and Cargo</p>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px;'><b>Description:</b> The total downloads of Starknet packages in different languages.</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 12px;'><b>Disclaimer:</b> The different languages provide access to different months, so take into account that Cargo may show fewer months and Python may not have the most updated data.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px;'><b>Note:</b> This chart includes historical data stored locally, providing a more comprehensive view over time.</p>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    add_starknet_growth_rate_visualization(csv_path)
+
+    csv_path = "data/source/starknet_downloads.csv"
+    downloads_combined = update_downloads_data(csv_path)
+
+    # Filter out the current month
+    current_month = pd.Timestamp.now().strftime("%Y-%m")
+    downloads_combined = downloads_combined[downloads_combined["month"] != current_month]
