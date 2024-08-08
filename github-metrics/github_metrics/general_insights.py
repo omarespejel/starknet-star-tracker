@@ -612,7 +612,20 @@ def homepage(df):
 
     add_starknet_growth_rate_visualization()
 
-    csv_path = "data/source/starknet_downloads.csv"
+    try:
+        csv_path = get_starknet_downloads_csv_path()
+        downloads_combined = update_downloads_data(csv_path)
+
+        # Filter out the current month
+        current_month = pd.Timestamp.now().strftime("%Y-%m")
+        downloads_combined = downloads_combined[downloads_combined["month"] != current_month]
+
+        # You can add any additional processing or visualization of downloads_combined here
+
+    except FileNotFoundError as e:
+        st.error(f"Error: {str(e)}")
+        st.warning("Unable to update or display download data due to missing CSV file.")
+
     downloads_combined = update_downloads_data(csv_path)
 
     # Filter out the current month
