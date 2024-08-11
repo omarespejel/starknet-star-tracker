@@ -10,3 +10,4 @@ python-pptx
 matplotlib
 pypistats
 orjson
+kaleido
