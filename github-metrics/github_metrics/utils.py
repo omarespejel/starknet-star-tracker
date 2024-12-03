@@ -16,16 +16,16 @@ def load_all_developers_dataset():
 
         try:
             df = pd.read_csv(
-                "./github-metrics/data/source/all_networks_developer_commits_2024-10-09.csv"
+                "./github-metrics/data/source/all_networks_developer_commits_2024-12-03.csv"
             )
         except FileNotFoundError:
             try:
                 df = pd.read_csv(
-                    "../data/source/all_networks_developer_commits_2024-10-09.csv"
+                    "../data/source/all_networks_developer_commits_2024-12-03.csv"
                 )
             except FileNotFoundError:
                 df = pd.read_csv(
-                    "data/source/all_networks_developer_commits_2024-10-09.csv"
+                    "data/source/all_networks_developer_commits_2024-12-03.csv"
                 )
         df["month_year"] = pd.to_datetime(df["month_year"], format="%B_%Y")
         return df
