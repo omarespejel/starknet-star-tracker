@@ -11,5 +11,3 @@ matplotlib
 pypistats
 orjson
 kaleido
-# For Heroku deployment
-gunicorn
